@@ -22,11 +22,25 @@ pub const Kmonad = struct {
     }
     self.layers.deinit();
   }
+
+  pub fn addLayer(self: *Self, layer: layers.Layer) !void {
+    try self.layers.put(layer.name, layer);
+  }
 };
 
 test "create" {
   var kmonad = Kmonad.init(std.testing.allocator);
   defer kmonad.deinit();
+}
+
+test "add layer" {
+  var kmonad = Kmonad.init(std.testing.allocator);
+  defer kmonad.deinit();
+  var layer = layers.Layer.init(std.testing.allocator, "aoeu");
+  defer layer.deinit();
+  try kmonad.addLayer(layer);
+  const name = kmonad.layers.get("aoeu").?.name;
+  try std.testing.expect(std.mem.eql(u8, name, "aoeu"));
 }
 
 test "" {
