@@ -14,8 +14,8 @@ const Node = struct {
   child: ?*Node = null,
   next: ?*Node = null,
 
-  pub fn init(value: Atom) Node {
-    return Node{
+  pub fn init(value: Atom) Self {
+    return .{
       .value = value,
       .child = null,
       .next = null,
@@ -93,4 +93,7 @@ test "setNext of child" {
   root.setChild(&child);
   child.setNext(&next);
   try std.testing.expect(root.child.?.next.?.value.int == 2);
+}
+
+test "" {
 }
