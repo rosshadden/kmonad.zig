@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Layer = struct {
+pub const Layer = struct {
   const Self = @This();
 
   allocator: std.mem.Allocator,
@@ -21,8 +21,9 @@ const Layer = struct {
 };
 
 test "create" {
-  const layer = Layer.init(std.testing.allocator, "aoeuaoeuaoeuaoeu");
-  try std.testing.expect(std.mem.eql(u8, layer.name, "aoeuaoeuaoeuaoeu"));
+  var layer = Layer.init(std.testing.allocator, "aoeu");
+  defer layer.deinit();
+  try std.testing.expect(std.mem.eql(u8, layer.name, "aoeu"));
 }
 
 test "add key" {
