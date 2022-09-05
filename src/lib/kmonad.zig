@@ -24,24 +24,24 @@ pub const Kmonad = struct {
       .layers = std.StringHashMap(layers.Layer).init(alc),
 
       .config = Config{
-        .input = trees.Node.init(
-          .{ .string = "device-file" },
-          &trees.Node.init(.{ .string = "/dev/input/by-id/usb-Razer_Razer_BlackWidow_Ultimate-if01-event-kbd" }, null, null),
+        .input = trees.Node.initFull(
+          .{ .keyword = "device-file" },
+          &trees.Node.init(.{ .string = "/dev/input/by-id/usb-Razer_Razer_BlackWidow_Ultimate-if01-event-kbd" }),
           null
         ),
-        .output = trees.Node.init(
-          .{ .string = "uinput-sink" },
-          &trees.Node.init(.{ .string = "Kmonad output" }, null, null),
+        .output = trees.Node.initFull(
+          .{ .keyword = "uinput-sink" },
+          &trees.Node.init(.{ .string = "Kmonad output" }),
           null
         ),
         .fallthrough = true,
         .allow_cmd = true,
       },
 
-      .config2 = trees.Node.init(
-        .{ .string = "defcfg" },
-        &trees.Node.init(.none, null, null),
-        &trees.Node.init(.none, null, null),
+      .config2 = trees.Node.initFull(
+        .{ .keyword = "defcfg" },
+        &trees.Node.init(.none),
+        &trees.Node.init(.none),
       ),
     };
   }
