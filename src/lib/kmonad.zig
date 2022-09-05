@@ -15,14 +15,14 @@ pub const Kmonad = struct {
       .allocator = alc,
       .layers = std.StringHashMap(layers.Layer).init(alc),
 
-      .config = trees.Node.initPairs(.{ .keyword = "defcfg" }, &.{
+      .config = trees.Node.initList(.{ .keyword = "defcfg" }, &.{
         &trees.Node.init(.{ .keyword = "input" }),
-        &trees.Node.initPairs(.{ .keyword = "device-file" }, &.{
+        &trees.Node.initList(.{ .keyword = "device-file" }, &.{
           &trees.Node.init(.{ .string = "/dev/input/by-id/usb-Razer_Razer_BlackWidow_Ultimate-if01-event-kbd" }),
         }),
 
         &trees.Node.init(.{ .keyword = "output" }),
-        &trees.Node.initPairs(.{ .keyword = "device-file" }, &.{
+        &trees.Node.initList(.{ .keyword = "device-file" }, &.{
           &trees.Node.init(.{ .string = "Kmonad output" }),
           &trees.Node.init(.{ .string = "sleep 1 && setxkbmap -option compose:sclk; xmodmap -e 'keycode 131 = Hyper_L' -e 'remove Mod4 = Hyper_L' -e 'add Mod3 = Hyper_L'" }),
         }),

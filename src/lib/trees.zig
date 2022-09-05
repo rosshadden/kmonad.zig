@@ -33,7 +33,7 @@ pub const Node = struct {
     };
   }
 
-  pub fn initPairs(value: Atom, pairs: []*Node) Self {
+  pub fn initList(value: Atom, list: []*Node) Self {
     var result = Node{
       .value = value,
       .child = null,
@@ -41,7 +41,7 @@ pub const Node = struct {
     };
 
     var last: *Node = &result;
-    for (pairs) |node, index| {
+    for (list) |node, index| {
       if (index == 0) {
         last.setChild(node);
       } else {
@@ -63,28 +63,28 @@ pub const Node = struct {
 };
 
 test "empty tree" {
-  const root = Node{ .value = .none };
+  var root = Node{ .value = .none };
   try std.testing.expect(root.value == .none);
   try std.testing.expect(root.child == null);
   try std.testing.expect(root.next == null);
 }
 
 test "init" {
-  const root = Node.init(.none);
+  var root = Node.init(.none);
   try std.testing.expect(root.value == .none);
   try std.testing.expect(root.child == null);
   try std.testing.expect(root.next == null);
 }
 
 test "init full" {
-  const root = Node.initFull(.none, null, null);
+  var root = Node.initFull(.none, null, null);
   try std.testing.expect(root.value == .none);
   try std.testing.expect(root.child == null);
   try std.testing.expect(root.next == null);
 }
 
-test "init pairs" {
-  const root = Node.initPairs(.{ .keyword = "key" }, &.{
+test "init list" {
+  var root = Node.initList(.{ .keyword = "key" }, &.{
     &Node.init(.{ .int = 0 }),
     &Node.init(.{ .int = 1 }),
     &Node.init(.{ .int = 2 }),
@@ -98,14 +98,14 @@ test "init pairs" {
 }
 
 test "atom none" {
-  const root = Node.init(.none);
+  var root = Node.init(.none);
   try std.testing.expect(root.value == .none);
   try std.testing.expect(root.child == null);
   try std.testing.expect(root.next == null);
 }
 
 test "atom bool" {
-  const root = Node.init(.{ .bool = true });
+  var root = Node.init(.{ .bool = true });
   try std.testing.expect(root.value == .bool);
   try std.testing.expect(root.value.bool == true);
   try std.testing.expect(root.child == null);
@@ -113,7 +113,7 @@ test "atom bool" {
 }
 
 test "atom int" {
-  const root = Node.init(.{ .int = 4 });
+  var root = Node.init(.{ .int = 4 });
   try std.testing.expect(root.value == .int);
   try std.testing.expect(root.value.int == 4);
   try std.testing.expect(root.child == null);
