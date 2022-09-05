@@ -1,13 +1,13 @@
 const std = @import("std");
 
-const Atom = union(enum) {
+pub const Atom = union(enum) {
   none,
   int: usize,
   float: f32,
   bool: bool,
 };
 
-const Node = struct {
+pub const Node = struct {
   const Self = @This();
 
   value: Atom,
