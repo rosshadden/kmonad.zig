@@ -1,17 +1,48 @@
 const std = @import("std");
 
 const layers = @import("./layers.zig");
+const trees = @import("./trees.zig");
+
+pub const Config = struct {
+  input: trees.Node,
+  output: trees.Node,
+  fallthrough: bool,
+  allow_cmd: bool,
+};
 
 pub const Kmonad = struct {
   const Self = @This();
 
   allocator: std.mem.Allocator,
   layers: std.StringHashMap(layers.Layer),
+  config: Config,
+  config2: trees.Node,
 
   pub fn init(alc: std.mem.Allocator) Self {
     return .{
       .allocator = alc,
       .layers = std.StringHashMap(layers.Layer).init(alc),
+
+      .config = Config{
+        .input = trees.Node.init(
+          .{ .string = "device-file" },
+          &trees.Node.init(.{ .string = "/dev/input/by-id/usb-Razer_Razer_BlackWidow_Ultimate-if01-event-kbd" }, null, null),
+          null
+        ),
+        .output = trees.Node.init(
+          .{ .string = "uinput-sink" },
+          &trees.Node.init(.{ .string = "Kmonad output" }, null, null),
+          null
+        ),
+        .fallthrough = true,
+        .allow_cmd = true,
+      },
+
+      .config2 = trees.Node.init(
+        .{ .string = "defcfg" },
+        &trees.Node.init(.none, null, null),
+        &trees.Node.init(.none, null, null),
+      ),
     };
   }
 
@@ -26,6 +57,12 @@ pub const Kmonad = struct {
   pub fn addLayer(self: *Self, layer: layers.Layer) !void {
     try self.layers.put(layer.name, layer);
   }
+
+  // pub fn toTree(self: *Self) trees.Node {
+  // }
+
+  // pub fn toLisp(self: *Self) []const u8 {
+  // }
 };
 
 test "create" {
