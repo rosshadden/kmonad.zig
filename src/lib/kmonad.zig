@@ -3,46 +3,36 @@ const std = @import("std");
 const layers = @import("./layers.zig");
 const trees = @import("./trees.zig");
 
-pub const Config = struct {
-  input: trees.Node,
-  output: trees.Node,
-  fallthrough: bool,
-  allow_cmd: bool,
-};
-
 pub const Kmonad = struct {
   const Self = @This();
 
   allocator: std.mem.Allocator,
   layers: std.StringHashMap(layers.Layer),
-  config: Config,
-  config2: trees.Node,
+  config: trees.Node,
 
   pub fn init(alc: std.mem.Allocator) Self {
     return .{
       .allocator = alc,
       .layers = std.StringHashMap(layers.Layer).init(alc),
 
-      .config = Config{
-        .input = trees.Node.initFull(
-          .{ .keyword = "device-file" },
+      .config = trees.Node.initPairs(.{ .keyword = "defcfg" }, &.{
+        &trees.Node.init(.{ .keyword = "input" }),
+        &trees.Node.initPairs(.{ .keyword = "device-file" }, &.{
           &trees.Node.init(.{ .string = "/dev/input/by-id/usb-Razer_Razer_BlackWidow_Ultimate-if01-event-kbd" }),
-          null
-        ),
-        .output = trees.Node.initFull(
-          .{ .keyword = "uinput-sink" },
-          &trees.Node.init(.{ .string = "Kmonad output" }),
-          null
-        ),
-        .fallthrough = true,
-        .allow_cmd = true,
-      },
+        }),
 
-      .config2 = trees.Node.initFull(
-        .{ .keyword = "defcfg" },
-        &trees.Node.init(.none),
-        &trees.Node.init(.none),
-      ),
+        &trees.Node.init(.{ .keyword = "output" }),
+        &trees.Node.initPairs(.{ .keyword = "device-file" }, &.{
+          &trees.Node.init(.{ .string = "Kmonad output" }),
+          &trees.Node.init(.{ .string = "sleep 1 && setxkbmap -option compose:sclk; xmodmap -e 'keycode 131 = Hyper_L' -e 'remove Mod4 = Hyper_L' -e 'add Mod3 = Hyper_L'" }),
+        }),
+
+        &trees.Node.init(.{ .keyword = "fallthrough" }),
+        &trees.Node.init(.{ .bool = true }),
+
+        &trees.Node.init(.{ .keyword = "allow_cmd" }),
+        &trees.Node.init(.{ .bool = true }),
+      }),
     };
   }
 
