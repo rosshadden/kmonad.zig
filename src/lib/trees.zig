@@ -60,6 +60,37 @@ pub const Node = struct {
   pub fn setNext(self: *Self, node: *Node) void {
     self.next = node;
   }
+
+  pub fn toLisp(self: *Self) ![]const u8 {
+    var alc = std.heap.page_allocator;
+
+    var result = std.ArrayList(u8).init(alc);
+    defer result.deinit();
+
+    var current: *Node = self;
+    while (true) {
+      switch (current.value) {
+        .keyword => {
+          try result.appendSlice(current.value.keyword);
+        },
+        .string => try result.appendSlice(current.value.string),
+        else => {},
+      }
+
+      if (current.child != null) {
+        current = current.child.?;
+        continue;
+      }
+
+      if (current.next != null) {
+        current = current.next.?;
+        continue;
+      }
+
+      if (current.child == null and current.next == null) break;
+    }
+    return result.toOwnedSlice();
+  }
 };
 
 test "empty tree" {
@@ -152,6 +183,32 @@ test "setNext of child" {
   root.setChild(&child);
   child.setNext(&next);
   try std.testing.expect(root.child.?.next.?.value.int == 2);
+}
+
+test "to lisp horizontal" {
+  var root = Node.initList(.{ .keyword = "root" }, &.{
+    &Node.init(.{ .keyword = "a" }),
+    &Node.init(.{ .keyword = "b" }),
+    &Node.init(.{ .keyword = "c" }),
+  });
+  var lisp = try root.toLisp();
+  std.debug.print("\n{s}\n", .{ lisp });
+  // try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root a b c)"));
+  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "rootabc"));
+}
+
+test "to lisp vertical" {
+  var root = Node.init(.{ .keyword = "root" });
+  var child1 = Node.init(.{ .keyword = "a" });
+  var child2 = Node.init(.{ .keyword = "b" });
+  var child3 = Node.init(.{ .keyword = "c" });
+  root.setChild(&child1);
+  child1.setChild(&child2);
+  child2.setChild(&child3);
+  var lisp = try root.toLisp();
+  std.debug.print("\n{s}\n", .{ lisp });
+  // try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root (a (b c)))"));
+  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "rootabc"));
 }
 
 test "" {
