@@ -1,7 +1,5 @@
 const std = @import("std");
 
-const LispErrors = error { OutOfMemory, };
-
 pub const Atom = union(enum) {
   none,
   root,
@@ -14,7 +12,6 @@ pub const Atom = union(enum) {
 
 pub const Node = struct {
   const Self = @This();
-  const alc = std.heap.page_allocator;
 
   value: Atom,
   child: ?*Node = null,
@@ -64,12 +61,17 @@ pub const Node = struct {
     self.next = node;
   }
 
-  pub fn toLisp(self: *Self) LispErrors![]const u8 {
+  pub fn toLisp(self: *Self, alc: std.mem.Allocator) ![]const u8 {
     var result = std.ArrayList(u8).init(alc);
-    defer result.deinit();
+    try self.toLispInternal(&result);
+    return result.toOwnedSlice();
+  }
 
-    // wrap start
-    if (self.child != null) try result.append('(');
+  fn toLispInternal(self: *Self, result: *std.ArrayList(u8)) error { OutOfMemory } !void {
+    if (self.child != null) {
+      // wrap start
+      try result.append('(');
+    }
 
     switch (self.value) {
       .keyword => try result.appendSlice(self.value.keyword),
@@ -81,19 +83,16 @@ pub const Node = struct {
     }
 
     if (self.child != null) {
-      const lisp = try self.child.?.toLisp();
       try result.append(' ');
-      try result.appendSlice(lisp);
+      try self.child.?.toLispInternal(result);
       // wrap end
       try result.append(')');
     }
 
     if (self.next != null) {
       try result.append(' ');
-      try result.appendSlice(try self.next.?.toLisp());
+      try self.next.?.toLispInternal(result);
     }
-
-    return result.toOwnedSlice();
   }
 };
 
@@ -195,8 +194,10 @@ test "to lisp horizontal" {
     &Node.init(.{ .keyword = "b" }),
     &Node.init(.{ .keyword = "c" }),
   });
-  std.debug.print("\n{s}\n", .{ try root.toLisp() });
-  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root a b c)"));
+  const lisp = try root.toLisp(std.testing.allocator);
+  defer std.testing.allocator.free(lisp);
+  std.debug.print("\n{s}\n", .{ lisp });
+  try std.testing.expect(std.mem.eql(u8, lisp, "(root a b c)"));
 }
 
 test "to lisp vertical" {
@@ -207,8 +208,10 @@ test "to lisp vertical" {
   root.setChild(&child1);
   child1.setChild(&child2);
   child2.setChild(&child3);
-  std.debug.print("\n{s}\n", .{ try root.toLisp() });
-  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root (a (true q)))"));
+  const lisp = try root.toLisp(std.testing.allocator);
+  defer std.testing.allocator.free(lisp);
+  std.debug.print("\n{s}\n", .{ lisp });
+  try std.testing.expect(std.mem.eql(u8, lisp, "(root (a (true q)))"));
 }
 
 // test "to lisp wacky" {
@@ -230,9 +233,10 @@ test "to lisp vertical" {
 //   root.setChild(&child1);
 //   child1.setChild(&child2);
 //   child2.setChild(&child3);
-//   var lisp = try root.toLisp();
+//   const lisp = try root.toLisp(std.testing.allocator);
+//   defer std.testing.allocator.free(lisp);
 //   std.debug.print("\n{s}\n", .{ lisp });
-//   try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root (oof (rab haha lol rofl) zab) (bar deep) baz)"));
+//   try std.testing.expect(std.mem.eql(u8, try root.toLisp(std.testing.allocator), "(root (oof (rab haha lol rofl) zab) (bar deep) baz)"));
 // }
 
 test "to lisp less wacky" {
@@ -254,8 +258,10 @@ test "to lisp less wacky" {
   });
   reel_deep.setChild(&child2);
   child_bar.setChild(&child_deep);
-  std.debug.print("\n{s}\n", .{ try root.toLisp() });
-  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root foo (bar deep) baz (oof (rab haha lol zab rofl)))"));
+  const lisp = try root.toLisp(std.testing.allocator);
+  defer std.testing.allocator.free(lisp);
+  std.debug.print("\n{s}\n", .{ lisp });
+  try std.testing.expect(std.mem.eql(u8, lisp, "(root foo (bar deep) baz (oof (rab haha lol zab rofl)))"));
 }
 
 test "" {

@@ -73,7 +73,9 @@ test "add layer" {
 test "to lisp" {
   var kmon = Kmonad.init(std.testing.allocator);
   defer kmon.deinit();
-  std.debug.print("{s}\n", .{ try kmon.config.toLisp() });
+  const lisp = try kmon.config.toLisp(std.testing.allocator);
+  defer std.testing.allocator.free(lisp);
+  std.debug.print("{s}\n", .{ lisp });
 }
 
 test "" {

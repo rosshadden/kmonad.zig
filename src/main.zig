@@ -9,7 +9,9 @@ pub fn main() anyerror!void {
   var kmon = kmonad.Kmonad.init(alc);
   defer kmon.deinit();
 
-  // std.debug.print("{s}\n", .{ try kmon.config.toLisp() });
+  const lisp = try kmon.config.toLisp(alc);
+  defer alc.free(lisp);
+  std.debug.print("{s}\n", .{ lisp });
 }
 
 test "" {
