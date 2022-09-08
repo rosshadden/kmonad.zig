@@ -12,6 +12,7 @@ pub const Atom = union(enum) {
 
 pub const Node = struct {
   const Self = @This();
+  const alc = std.heap.page_allocator;
 
   value: Atom,
   child: ?*Node = null,
@@ -61,9 +62,7 @@ pub const Node = struct {
     self.next = node;
   }
 
-  pub fn toLisp(self: *Self) ![]const u8 {
-    var alc = std.heap.page_allocator;
-
+  pub fn toLispImp(self: *Self) ![]const u8 {
     var result = std.ArrayList(u8).init(alc);
     defer result.deinit();
 
@@ -89,6 +88,44 @@ pub const Node = struct {
 
       if (current.child == null and current.next == null) break;
     }
+    return result.toOwnedSlice();
+  }
+
+  const ToLispErrors = error {
+    OutOfMemory,
+  };
+
+  pub fn toLisp(self: *Self) ToLispErrors![]const u8 {
+    var result = std.ArrayList(u8).init(alc);
+    defer result.deinit();
+
+    // wrap start
+    if (self.child != null) {
+      try result.append('(');
+    }
+
+    switch (self.value) {
+      .keyword => try result.appendSlice(self.value.keyword),
+      .string => try result.appendSlice(self.value.string),
+      else => {},
+    }
+
+    if (self.child != null) {
+      const lisp = try self.child.?.toLisp();
+      try result.append(' ');
+      try result.appendSlice(lisp);
+    }
+
+    if (self.next != null) {
+      try result.append(' ');
+      try result.appendSlice(try self.next.?.toLisp());
+    }
+
+    // wrap end
+    if (self.child != null) {
+      try result.append(')');
+    }
+
     return result.toOwnedSlice();
   }
 };
@@ -193,8 +230,7 @@ test "to lisp horizontal" {
   });
   var lisp = try root.toLisp();
   std.debug.print("\n{s}\n", .{ lisp });
-  // try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root a b c)"));
-  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "rootabc"));
+  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root a b c)"));
 }
 
 test "to lisp vertical" {
@@ -207,8 +243,7 @@ test "to lisp vertical" {
   child2.setChild(&child3);
   var lisp = try root.toLisp();
   std.debug.print("\n{s}\n", .{ lisp });
-  // try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root (a (b c)))"));
-  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "rootabc"));
+  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root (a (b c)))"));
 }
 
 test "" {
