@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const LispErrors = error { OutOfMemory, };
+
 pub const Atom = union(enum) {
   none,
   root,
@@ -62,40 +64,7 @@ pub const Node = struct {
     self.next = node;
   }
 
-  pub fn toLispImp(self: *Self) ![]const u8 {
-    var result = std.ArrayList(u8).init(alc);
-    defer result.deinit();
-
-    var current: *Node = self;
-    while (true) {
-      switch (current.value) {
-        .keyword => {
-          try result.appendSlice(current.value.keyword);
-        },
-        .string => try result.appendSlice(current.value.string),
-        else => {},
-      }
-
-      if (current.child != null) {
-        current = current.child.?;
-        continue;
-      }
-
-      if (current.next != null) {
-        current = current.next.?;
-        continue;
-      }
-
-      if (current.child == null and current.next == null) break;
-    }
-    return result.toOwnedSlice();
-  }
-
-  const ToLispErrors = error {
-    OutOfMemory,
-  };
-
-  pub fn toLisp(self: *Self) ToLispErrors![]const u8 {
+  pub fn toLisp(self: *Self) LispErrors![]const u8 {
     var result = std.ArrayList(u8).init(alc);
     defer result.deinit();
 
@@ -223,8 +192,7 @@ test "to lisp horizontal" {
     &Node.init(.{ .keyword = "b" }),
     &Node.init(.{ .keyword = "c" }),
   });
-  var lisp = try root.toLisp();
-  std.debug.print("\n{s}\n", .{ lisp });
+  std.debug.print("\n{s}\n", .{ try root.toLisp() });
   try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root a b c)"));
 }
 
@@ -236,8 +204,7 @@ test "to lisp vertical" {
   root.setChild(&child1);
   child1.setChild(&child2);
   child2.setChild(&child3);
-  var lisp = try root.toLisp();
-  std.debug.print("\n{s}\n", .{ lisp });
+  std.debug.print("\n{s}\n", .{ try root.toLisp() });
   try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root (a (b c)))"));
 }
 
@@ -269,7 +236,6 @@ test "to lisp less wacky" {
   var child_bar = Node.init(.{ .keyword = "bar" });
   var child_deep = Node.init(.{ .keyword = "deep" });
   var reel_deep = Node.init(.{ .keyword = "oof" });
-  child_bar.setChild(&child_deep);
   var root = Node.initList(.{ .keyword = "root" }, &.{
     &Node.init(.{ .keyword = "foo" }),
     &child_bar,
@@ -284,8 +250,8 @@ test "to lisp less wacky" {
     &Node.init(.{ .keyword = "rofl" }),
   });
   reel_deep.setChild(&child2);
-  var lisp = try root.toLisp();
-  std.debug.print("\n{s}\n", .{ lisp });
+  child_bar.setChild(&child_deep);
+  std.debug.print("\n{s}\n", .{ try root.toLisp() });
   try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root foo (bar deep) baz (oof (rab haha lol zab rofl)))"));
 }
 
