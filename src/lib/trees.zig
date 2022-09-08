@@ -74,6 +74,9 @@ pub const Node = struct {
     switch (self.value) {
       .keyword => try result.appendSlice(self.value.keyword),
       .string => try result.appendSlice(self.value.string),
+      .bool => try result.appendSlice(if (self.value.bool) "true" else "false"),
+      // .int => try result.appendSlice(try std),
+      // .float => try result.appendSlice(self.value.float),
       else => {},
     }
 
@@ -199,13 +202,13 @@ test "to lisp horizontal" {
 test "to lisp vertical" {
   var root = Node.init(.{ .keyword = "root" });
   var child1 = Node.init(.{ .keyword = "a" });
-  var child2 = Node.init(.{ .keyword = "b" });
-  var child3 = Node.init(.{ .keyword = "c" });
+  var child2 = Node.init(.{ .bool = true });
+  var child3 = Node.init(.{ .string = "q" });
   root.setChild(&child1);
   child1.setChild(&child2);
   child2.setChild(&child3);
   std.debug.print("\n{s}\n", .{ try root.toLisp() });
-  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root (a (b c)))"));
+  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root (a (true q)))"));
 }
 
 // test "to lisp wacky" {

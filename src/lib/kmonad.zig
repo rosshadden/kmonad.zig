@@ -56,18 +56,24 @@ pub const Kmonad = struct {
 };
 
 test "create" {
-  var kmonad = Kmonad.init(std.testing.allocator);
-  defer kmonad.deinit();
+  var kmon = Kmonad.init(std.testing.allocator);
+  defer kmon.deinit();
 }
 
 test "add layer" {
-  var kmonad = Kmonad.init(std.testing.allocator);
-  defer kmonad.deinit();
+  var kmon = Kmonad.init(std.testing.allocator);
+  defer kmon.deinit();
   var layer = layers.Layer.init(std.testing.allocator, "aoeu");
   defer layer.deinit();
-  try kmonad.addLayer(layer);
-  const name = kmonad.layers.get("aoeu").?.name;
+  try kmon.addLayer(layer);
+  const name = kmon.layers.get("aoeu").?.name;
   try std.testing.expect(std.mem.eql(u8, name, "aoeu"));
+}
+
+test "to lisp" {
+  var kmon = Kmonad.init(std.testing.allocator);
+  defer kmon.deinit();
+  std.debug.print("{s}\n", .{ try kmon.config.toLisp() });
 }
 
 test "" {
