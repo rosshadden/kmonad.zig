@@ -100,9 +100,7 @@ pub const Node = struct {
     defer result.deinit();
 
     // wrap start
-    if (self.child != null) {
-      try result.append('(');
-    }
+    if (self.child != null) try result.append('(');
 
     switch (self.value) {
       .keyword => try result.appendSlice(self.value.keyword),
@@ -114,16 +112,13 @@ pub const Node = struct {
       const lisp = try self.child.?.toLisp();
       try result.append(' ');
       try result.appendSlice(lisp);
+      // wrap end
+      try result.append(')');
     }
 
     if (self.next != null) {
       try result.append(' ');
       try result.appendSlice(try self.next.?.toLisp());
-    }
-
-    // wrap end
-    if (self.child != null) {
-      try result.append(')');
     }
 
     return result.toOwnedSlice();
@@ -244,6 +239,54 @@ test "to lisp vertical" {
   var lisp = try root.toLisp();
   std.debug.print("\n{s}\n", .{ lisp });
   try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root (a (b c)))"));
+}
+
+// test "to lisp wacky" {
+//   var child_bar = Node.init(.{ .keyword = "bar" });
+//   var child_deep = Node.init(.{ .keyword = "deep" });
+//   child_bar.setChild(&child_deep);
+//   var root = Node.initList(.{ .keyword = "root" }, &.{
+//     &Node.init(.{ .keyword = "foo" }),
+//     &child_bar,
+//     &Node.init(.{ .keyword = "baz" }),
+//   });
+//   var child1 = Node.init(.{ .keyword = "oof" });
+//   var child2 = Node.initList(.{ .keyword = "rab" }, &.{
+//     &Node.init(.{ .keyword = "haha" }),
+//     &Node.init(.{ .keyword = "lol" }),
+//     &Node.init(.{ .keyword = "rofl" }),
+//   });
+//   var child3 = Node.init(.{ .keyword = "zab" });
+//   root.setChild(&child1);
+//   child1.setChild(&child2);
+//   child2.setChild(&child3);
+//   var lisp = try root.toLisp();
+//   std.debug.print("\n{s}\n", .{ lisp });
+//   try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root (oof (rab haha lol rofl) zab) (bar deep) baz)"));
+// }
+
+test "to lisp less wacky" {
+  var child_bar = Node.init(.{ .keyword = "bar" });
+  var child_deep = Node.init(.{ .keyword = "deep" });
+  var reel_deep = Node.init(.{ .keyword = "oof" });
+  child_bar.setChild(&child_deep);
+  var root = Node.initList(.{ .keyword = "root" }, &.{
+    &Node.init(.{ .keyword = "foo" }),
+    &child_bar,
+    &Node.init(.{ .keyword = "baz" }),
+    &reel_deep,
+  });
+  var child3 = Node.init(.{ .keyword = "zab" });
+  var child2 = Node.initList(.{ .keyword = "rab" }, &.{
+    &Node.init(.{ .keyword = "haha" }),
+    &Node.init(.{ .keyword = "lol" }),
+    &child3,
+    &Node.init(.{ .keyword = "rofl" }),
+  });
+  reel_deep.setChild(&child2);
+  var lisp = try root.toLisp();
+  std.debug.print("\n{s}\n", .{ lisp });
+  try std.testing.expect(std.mem.eql(u8, try root.toLisp(), "(root foo (bar deep) baz (oof (rab haha lol zab rofl)))"));
 }
 
 test "" {
