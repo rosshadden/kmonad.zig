@@ -70,6 +70,14 @@ test "add layer" {
   try std.testing.expect(std.mem.eql(u8, name, "aoeu"));
 }
 
+test "to lisp vertical" {
+  var root = trees.Node.init(.{ .keyword = "root" });
+  const lisp = try root.toLisp(std.testing.allocator);
+  defer std.testing.allocator.free(lisp);
+  std.debug.print("\n{s}\n", .{ lisp });
+  try std.testing.expect(std.mem.eql(u8, lisp, "(root)"));
+}
+
 test "to lisp" {
   var kmon = Kmonad.init(std.testing.allocator);
   defer kmon.deinit();
